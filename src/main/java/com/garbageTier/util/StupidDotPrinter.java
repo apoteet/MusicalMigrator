@@ -1,4 +1,4 @@
-package util;
+package com.garbageTier.util;
 
 import java.io.PrintStream;
 

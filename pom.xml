@@ -6,7 +6,12 @@
 
     <groupId>com.garbageTier</groupId>
     <artifactId>MusicalMigrator</artifactId>
-    <version>1.0</version>
+    <version>0.1</version>
+
+    <properties>
+        <JAVA_HOME>C:\Program Files\Java\jdk-10.0.1\bin\javac</JAVA_HOME>
+        <main.class>com.garbageTier.main.MusicalMigrator</main.class>
+    </properties>
 
     <dependencies>
         <dependency>
@@ -31,8 +36,23 @@
                     <target>1.10</target>
                     <showDeprecation>true</showDeprecation>
                     <showWarnings>true</showWarnings>
-                    <executable>C:\Program Files\Java\jdk-10.0.1\bin\javac</executable>
+                    <executable>${JAVA_HOME}</executable>
                     <fork>true</fork>
+                </configuration>
+            </plugin>
+            <plugin>
+                <!-- Build an executable JAR -->
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-jar-plugin</artifactId>
+                <version>3.1.0</version>
+                <configuration>
+                    <archive>
+                        <manifest>
+                            <addClasspath>true</addClasspath>
+                            <classpathPrefix>lib/</classpathPrefix>
+                            <mainClass>${main.class}</mainClass>
+                        </manifest>
+                    </archive>
                 </configuration>
             </plugin>
         </plugins>

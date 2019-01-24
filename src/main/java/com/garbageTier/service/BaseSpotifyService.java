@@ -1,6 +1,6 @@
-package service;
+package com.garbageTier.service;
 
-import Store.PagingList;
+import com.garbageTier.store.PagingList;
 import com.neovisionaries.i18n.CountryCode;
 import com.wrapper.spotify.SpotifyApi;
 import com.wrapper.spotify.SpotifyHttpManager;
@@ -11,8 +11,7 @@ import com.wrapper.spotify.model_objects.specification.Playlist;
 import com.wrapper.spotify.model_objects.specification.User;
 import com.wrapper.spotify.model_objects.specification.Track;
 import com.wrapper.spotify.requests.authorization.authorization_code.AuthorizationCodeUriRequest;
-import util.ProgressTracker;
-import util.StupidDotPrinter;
+import com.garbageTier.util.ProgressTracker;
 
 import java.io.IOException;
 import java.net.URI;

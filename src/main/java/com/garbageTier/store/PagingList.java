@@ -1,4 +1,4 @@
-package Store;
+package com.garbageTier.store;
 
 import java.util.*;
 

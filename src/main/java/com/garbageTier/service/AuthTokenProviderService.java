@@ -1,4 +1,4 @@
-package service;
+package com.garbageTier.service;
 
 import com.github.felixgail.gplaymusic.util.TokenProvider;
 import svarzee.gps.gpsoauth.AuthToken;

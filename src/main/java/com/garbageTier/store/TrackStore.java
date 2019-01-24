@@ -1,4 +1,4 @@
-package Store;
+package com.garbageTier.store;
 
 import com.github.felixgail.gplaymusic.model.Playlist;
 import com.github.felixgail.gplaymusic.model.Track;

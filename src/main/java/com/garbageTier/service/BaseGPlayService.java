@@ -1,4 +1,4 @@
-package service;
+package com.garbageTier.service;
 
 import com.github.felixgail.gplaymusic.api.GPlayMusic;
 import com.github.felixgail.gplaymusic.api.PlaylistApi;

@@ -1,15 +1,15 @@
-package main;
+package com.garbageTier.main;
 
-import Store.TrackStore;
+import com.garbageTier.store.TrackStore;
 import com.github.felixgail.gplaymusic.model.Playlist;
 import com.github.felixgail.gplaymusic.model.PlaylistEntry;
 import com.github.felixgail.gplaymusic.model.Track;
 
 import javafx.util.Pair;
-import service.AuthTokenProviderService;
-import service.BaseGPlayService;
-import service.BaseSpotifyService;
-import util.StupidDotPrinter;
+import com.garbageTier.service.AuthTokenProviderService;
+import com.garbageTier.service.BaseGPlayService;
+import com.garbageTier.service.BaseSpotifyService;
+import com.garbageTier.util.StupidDotPrinter;
 
 import java.io.*;
 import java.util.*;
@@ -70,7 +70,7 @@ public class MusicalMigrator {
         Console secureConsole = System.console();
         if (secureConsole == null) {
             System.out.println("Secure password terminal couldn't initialize, sorry bub.");
-            System.out.print("Please enter your password like a pleb: ");
+            System.out.print("Please enter your password in cleartext: ");
             password = scanner.next();
         } else {
             char[] passwordData = System.console().readPassword("Password: ");
@@ -130,8 +130,11 @@ public class MusicalMigrator {
 
             return new Pair<>(username, imei);
         } catch (IOException ioe) {
-            System.out.println("Error reading file" + filename);
-            System.out.print(ioe.toString());
+            System.out.println("authData file not found. In the future, you can create a " +
+                    "file in the same directory as this jarfile and call it \"authData\". ");
+            System.out.println("The file is just two lines, and looks like: ");
+            System.out.println("<email>");
+            System.out.println("<IMEI>");
         }
         return new Pair<>(null, null);
     }
@@ -149,14 +152,16 @@ public class MusicalMigrator {
     }
 
     private static void printIntro() {
-        System.out.println("main.MusicalMigrator - @Alek Poteet");
+        System.out.println("MusicalMigrator - @Alek Poteet");
+        System.out.println("-----------------------------------------------------------------------------------");
         System.out.println("This tool will automatically pull your songs from Google Play Music library and playlists, " +
                 "and search those songs to add to Spotify. To get started, your google account username (email), password, " +
-                "and the IMEI of an android device that had GooglePlayMusic installed. ");
+                "and the IMEI of an android device that had GooglePlayMusic installed.\n ");
         System.out.println("If you have 2 factor authentication, you'll also need to do some extra stuff. " +
-                "The quickest solution is to temporarily allow \"less secure apps\" to access your account" +
-                "I would follow the link below but then reenable security after using this tool");
+                "The quickest solution is to temporarily allow \"less secure apps\" to access your account. " +
+                "I would follow the link below but then re-enable security after using this tool\n");
         System.out.println("https://support.google.com/accounts/answer/6010255");
+        System.out.println("-----------------------------------------------------------------------------------");
     }
 
     private static void debugResults(TrackStore store) {
