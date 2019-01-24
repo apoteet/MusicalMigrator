@@ -9,6 +9,9 @@ https://github.com/thelinmichael/spotify-web-api-java
 # Build
 Simply `mvn clean install` to create a runnable jarfile.
 
+Be forewarned that this project uses a forked library for getting music from google play. The fork was hacked together and wouldn't be available if you built locally. MM will still work with the library published in Maven artifactory, but it will only fetch tracks that have streaming URLs, which likely means that music you uploaded to your google play library will be ignored.
+If you just want to run this program, just download one of the jars from the release directory
+
 # Usage
 CD into the target directory and run with `java -jar MusicalMigrator-1.0.jar`
 
