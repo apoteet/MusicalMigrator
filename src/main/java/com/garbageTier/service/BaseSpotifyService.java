@@ -1,31 +1,29 @@
 package com.garbageTier.service;
 
 import com.garbageTier.store.PagingList;
+import com.garbageTier.store.TrackStore;
+import com.garbageTier.util.ProgressTracker;
 import com.neovisionaries.i18n.CountryCode;
 import com.wrapper.spotify.SpotifyApi;
 import com.wrapper.spotify.SpotifyHttpManager;
 import com.wrapper.spotify.exceptions.SpotifyWebApiException;
 import com.wrapper.spotify.model_objects.credentials.AuthorizationCodeCredentials;
-import com.wrapper.spotify.model_objects.specification.Paging;
-import com.wrapper.spotify.model_objects.specification.Playlist;
-import com.wrapper.spotify.model_objects.specification.User;
-import com.wrapper.spotify.model_objects.specification.Track;
+import com.wrapper.spotify.model_objects.specification.*;
 import com.wrapper.spotify.requests.authorization.authorization_code.AuthorizationCodeUriRequest;
-import com.garbageTier.util.ProgressTracker;
 
 import java.io.IOException;
 import java.net.URI;
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class BaseSpotifyService {
+    private static final String BS_REDIRECT = "https://www.google.com";
+    private static final String CLIENT_ID = "161fba73b49f4089b4c593ea4fb5ece4";
+    private static final String CLIENT_SECRET = "6635ed07a0ea4ea784de5aa232b86a53";
     private SpotifyApi spotifyApi;
     private AuthorizationCodeCredentials authCred;
     private String authRequestCode;
     private User userAccount;
-
-    private static final String BS_REDIRECT = "https://www.google.com";
-    private static final String CLIENT_ID = "161fba73b49f4089b4c593ea4fb5ece4";
-    private static final String CLIENT_SECRET = "6635ed07a0ea4ea784de5aa232b86a53";
 
 
     public BaseSpotifyService() {
@@ -48,11 +46,22 @@ public class BaseSpotifyService {
 
     public Playlist createPlaylist(com.github.felixgail.gplaymusic.model.Playlist gplaylist) {
         try {
-            return spotifyApi.createPlaylist(userAccount.getId(), gplaylist.getName())
-                    .collaborative(false)
-                    .description(gplaylist.getDescription())
-                    .build()
-                    .execute();
+//            PlaylistSimplified[] playlistSearchResult = spotifyApi.searchPlaylists(gplaylist.getName()).build().execute().getItems();
+
+//            if (playlistSearchResult.length == 0) {
+                return spotifyApi.createPlaylist(userAccount.getId(), gplaylist.getName())
+                        .collaborative(false)
+                        .description(gplaylist.getDescription())
+                        .build()
+                        .execute();
+
+//                return new PlaylistSimplified.Builder()
+//                        .setName(playlistWithUrl.getName())
+//                        .setId(playlistWithUrl.getId())
+//                        .build();
+//            } else {
+//                return playlistSearchResult[0];
+//            }
         } catch (IOException | SpotifyWebApiException ex) {
             System.out.println(ex.toString());
             System.out.println("Error creating playlist " + gplaylist.getName());
@@ -94,48 +103,34 @@ public class BaseSpotifyService {
         }
     }
 
-    public Track addTrackToLibrary(com.github.felixgail.gplaymusic.model.Track track) {
-        try {
-            Track addedTrack = searchTrack(track);
-            if (track == null)
-                return null;
-
-            spotifyApi.saveTracksForUser(addedTrack.getId());
-
-            return addedTrack;
-        } catch (IOException | SpotifyWebApiException ex) {
-            System.out.println(ex.toString());
-            System.out.println("Error adding track " + track.getTitle());
-            return null;
-        }
-    }
-
-    public List<Track> addTracksToLibrary(Collection<com.github.felixgail.gplaymusic.model.Track> tracks) {
-        List<Track> addedTracks = new ArrayList<>();
+    public List<com.github.felixgail.gplaymusic.model.Track> addTracksToLibrary(TrackStore tracks) {
+        List<com.github.felixgail.gplaymusic.model.Track> skippedTracks = new ArrayList<>();
         List<String> trackIds = new ArrayList<>();
 
         ProgressTracker progressWorker = new ProgressTracker(System.out, tracks.size());
         Thread progressThread = new Thread(progressWorker);
-        System.out.println("Converting google track ids to spotify ids.");
+        System.out.println("Converting google track ids to spotify ids...");
 
         progressThread.start();
-        tracks.forEach(track -> {
+        List<com.github.felixgail.gplaymusic.model.Track> trackList = tracks.getAllGoogleTracks();
+        trackList.forEach(track -> {
             try {
                 Track spotifyTrack = searchTrack(track);
 
                 progressWorker.increment();
-                Thread.sleep(50);
+                Thread.sleep(40);
 
                 if (spotifyTrack == null) {
+                    skippedTracks.add(track);
                     return;
                 }
-                addedTracks.add(spotifyTrack);
                 trackIds.add(spotifyTrack.getId());
+                tracks.mapGoogleToSpotify(track, spotifyTrack);
             } catch (SpotifyWebApiException ex) {
                 System.out.println(ex.toString());
                 try {
                     //API Rate exceeded; add current track back to the queue & wait 5 sec
-                    tracks.add(track);
+                    trackList.add(track);
                     Thread.sleep(5000);
                 } catch (InterruptedException e) {
                     System.out.println("Holy crap interrupted");
@@ -167,8 +162,30 @@ public class BaseSpotifyService {
                 System.out.println(ex.toString());
             }
         }
-        System.out.println("All done");
-        return addedTracks;
+
+        return skippedTracks;
+    }
+
+    public List<String> addTracksToPlaylist(Playlist playlist, List<Track> tracks) {
+        List<String> trackIds = tracks.stream()
+                .filter(Objects::nonNull)
+                .map(Track::getUri)
+                .collect(Collectors.toList());
+        PagingList<String> batchIds = new PagingList<>(trackIds, 50);   //Spotify API says it can handle up to 100, but i get no response for requests of that size
+
+        List<String> tracksNotAdded = new ArrayList<>();
+        while(batchIds.hasNext()) {
+            try {
+                List<String> batchPage = batchIds.nextPage();
+                String[] ids = new String[batchPage.size()];
+                batchPage.toArray(ids);
+                spotifyApi.addTracksToPlaylist(playlist.getId(), ids).build().execute();
+            } catch (Exception e) {
+                tracksNotAdded.addAll(batchIds);
+                System.out.println("Exception adding batch to playlist");
+            }
+        }
+        return tracksNotAdded;
     }
 
     private void refreshAuthToken() {

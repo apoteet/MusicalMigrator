@@ -5,6 +5,7 @@ import com.github.felixgail.gplaymusic.model.Playlist;
 import com.github.felixgail.gplaymusic.model.PlaylistEntry;
 import com.github.felixgail.gplaymusic.model.Track;
 
+import com.wrapper.spotify.model_objects.specification.PlaylistSimplified;
 import javafx.util.Pair;
 import com.garbageTier.service.AuthTokenProviderService;
 import com.garbageTier.service.BaseGPlayService;
@@ -25,17 +26,28 @@ public class MusicalMigrator {
         TrackStore store = new TrackStore();
         fetchAllGplaySongs(store);
 
-        debugResults(store);
+        debugResults(store.getAllGoogleTracks(), "Tracks pulled from google play:");
 
         BaseSpotifyService spotifyApi = new BaseSpotifyService();
-//        store.getAllPlaylists().forEach(playlist -> {
-//            System.out.println("Creating playlist " + playlist.getName());
-//            spotifyApi.createPlaylist(playlist);
-//            System.out.println("Playlist created");
-//        });
 
+        List<Track> tracksNotAdded = spotifyApi.addTracksToLibrary(store);
+        if(tracksNotAdded.size() > 0) {
+            debugResults(tracksNotAdded, "Couldn't find spotify equivalents for the following tracks:");
+        }
 
-        spotifyApi.addTracksToLibrary(store.getAllTracks());
+        store.getAllGooglePlaylists().forEach(playlist -> {
+            System.out.println("Creating playlist " + playlist.getName());
+            com.wrapper.spotify.model_objects.specification.Playlist newPlaylist = spotifyApi.createPlaylist(playlist);
+            store.putPlaylist(newPlaylist);
+            System.out.println("Playlist created. Adding songs to playlist");
+            List<com.wrapper.spotify.model_objects.specification.Track> playlistTracks = store.getSpotifyTracksForGooglePlaylist(playlist);
+
+            List<String> skippedTracks = spotifyApi.addTracksToPlaylist(newPlaylist, playlistTracks);
+            if(skippedTracks.size() > 0) {
+                System.out.println("Skipped adding the following tracks to playlist " + newPlaylist.getName());
+                skippedTracks.forEach(System.out::println);
+            }
+        });
     }
     
     private static boolean promptAndSetCredentials() {
@@ -130,11 +142,11 @@ public class MusicalMigrator {
 
             return new Pair<>(username, imei);
         } catch (IOException ioe) {
-            System.out.println("authData file not found. In the future, you can create a " +
-                    "file in the same directory as this jarfile and call it \"authData\". ");
-            System.out.println("The file is just two lines, and looks like: ");
-            System.out.println("<email>");
-            System.out.println("<IMEI>");
+//            System.out.println("authData file not found. In the future, you can create a " +
+//                    "file in the same directory as this jarfile and call it \"authData\". ");
+//            System.out.println("The file is just two lines, and looks like: ");
+//            System.out.println("<email>");
+//            System.out.println("<IMEI>");
         }
         return new Pair<>(null, null);
     }
@@ -164,16 +176,16 @@ public class MusicalMigrator {
         System.out.println("-----------------------------------------------------------------------------------");
     }
 
-    private static void debugResults(TrackStore store) {
+    private static void debugResults(List<Track> trackList, String header) {
+        System.out.println(header);
         //Debug results
-        List<Track> sortedTracks = store.getAllTracks();
-        sortedTracks.sort(new Comparator<>() {
+        trackList.sort(new Comparator<>() {
             @Override
             public int compare(Track o1, Track o2) {
                 return o1.getTitle().toLowerCase().compareTo(o2.getTitle().toLowerCase());
             }
         });
-        sortedTracks.forEach(track -> System.out.println(String.format("%s - %s - %s", track.getTitle(), track.getArtist(), track.getAlbum())));
-        System.out.println("Library retrieved. Total track count: " + sortedTracks.size());
+        trackList.forEach(track -> System.out.println(String.format("%s - %s - %s", track.getTitle(), track.getArtist(), track.getAlbum())));
+        System.out.println("Total count: " + trackList.size());
     }
 }

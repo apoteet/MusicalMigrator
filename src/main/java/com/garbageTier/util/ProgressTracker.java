@@ -20,16 +20,17 @@ public class ProgressTracker implements Runnable {
 
     @Override
     public void run() {
-        while(keepItUpBuddy) {
+        do {
             try {
-                if(this.progress != this.lastPrintedNumber) {
+                if (this.progress != this.lastPrintedNumber) {
                     stream.println("Progress: " + this.progress + " / " + this.maxVal);
                     this.lastPrintedNumber = this.progress;
                 }
                 Thread.sleep(2000);
-            } catch (InterruptedException ie) { }
-        }
-        if(this.progress != this.lastPrintedNumber) {
+            } catch (InterruptedException ie) {
+            }
+        } while (keepItUpBuddy);
+        if (this.progress != this.lastPrintedNumber) {
             stream.println("Progress: " + this.progress + " / " + this.maxVal);
             this.lastPrintedNumber = this.progress;
         }
