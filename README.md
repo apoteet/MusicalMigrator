@@ -19,8 +19,10 @@ You will first be prompted for 3 pieces of information
 - Your Google play password
 
 If you plan on running the migration multiple times, you can save time in the future by creating a file named "authData" and inserting information in the following format:
-```email
-IMEI```
+```
+email
+IMEI
+```
 For security reasons, passwords will not be read from the file
 
 Once this information is received, the streaming service will be queried to grab all songs in your library.
